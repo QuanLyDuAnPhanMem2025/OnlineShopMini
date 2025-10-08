@@ -1,64 +1,118 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Header from '../components/Header';
 import ProductCard from '../components/ProductCard';
-import { mockPhones, mockBrands, mockCategories, formatPrice } from '../data/mockData';
+import { phoneService, formatPrice } from '../services/api';
 
 const HomePage = () => {
+  const [phones, setPhones] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [priceRange, setPriceRange] = useState({ min: 0, max: 50000000 });
-  const [sortBy, setSortBy] = useState('name');
-  const [sortOrder, setSortOrder] = useState('asc');
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 12;
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalPhones, setTotalPhones] = useState(0);
+  const itemsPerPage = 20;
 
-  // Filter và sort sản phẩm
-  const filteredAndSortedPhones = useMemo(() => {
-    let filtered = mockPhones.filter(phone => {
-      const matchesSearch = phone.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           phone.brand.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesBrand = !selectedBrand || phone.brand === selectedBrand;
-      const matchesCategory = !selectedCategory || phone.subcategory === selectedCategory;
-      const matchesPrice = phone.price >= priceRange.min && phone.price <= priceRange.max;
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
 
-      return matchesSearch && matchesBrand && matchesCategory && matchesPrice;
-    });
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-    // Sort
-    filtered.sort((a, b) => {
-      let aValue, bValue;
+  // Load initial data
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Load phones when filters change
+  useEffect(() => {
+    loadPhones();
+  }, [currentPage, selectedBrand, selectedCategory, priceRange, sortBy, sortOrder, debouncedSearchQuery]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([
+        loadPhones(),
+        loadBrands(),
+        loadCategories()
+      ]);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadPhones = async () => {
+    try {
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+        brand: selectedBrand || undefined,
+        category: selectedCategory || undefined,
+        minPrice: priceRange.min || undefined,
+        maxPrice: priceRange.max || undefined,
+        search: debouncedSearchQuery || undefined,
+        sortBy,
+        sortOrder
+      };
+
+      const response = await phoneService.getPhones(params);
       
-      switch (sortBy) {
-        case 'price':
-          aValue = a.price;
-          bValue = b.price;
-          break;
-        case 'rating':
-          aValue = a.averageRating;
-          bValue = b.averageRating;
-          break;
-        case 'name':
-        default:
-          aValue = a.name;
-          bValue = b.name;
-          break;
+      if (response.success) {
+        setPhones(response.data.phones);
+        setTotalPages(response.data.pagination.totalPages);
+        setTotalPhones(response.data.pagination.total);
       }
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
+  const loadBrands = async () => {
+    try {
+      // Chỉ load brands một lần và cache
+      if (brands.length > 0) return;
+      
+      const response = await phoneService.getPhones({ limit: 1000, search: '' });
+      if (response.success) {
+        const uniqueBrands = [...new Set(response.data.phones.map(phone => phone.brand))]
+          .map(brand => ({ id: brand, name: brand }));
+        setBrands(uniqueBrands);
       }
-    });
+    } catch (err) {
+      console.error('Error loading brands:', err);
+    }
+  };
 
-    return filtered;
-  }, [searchQuery, selectedBrand, selectedCategory, priceRange, sortBy, sortOrder]);
-
-  // Pagination
-  const totalPages = Math.ceil(filteredAndSortedPhones.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedPhones = filteredAndSortedPhones.slice(startIndex, startIndex + itemsPerPage);
+  const loadCategories = async () => {
+    try {
+      // Chỉ load categories một lần và cache
+      if (categories.length > 0) return;
+      
+      const response = await phoneService.getPhones({ limit: 1000, search: '' });
+      if (response.success) {
+        const uniqueCategories = [...new Set(response.data.phones.map(phone => phone.subcategory))]
+          .map(category => ({ id: category, name: category, slug: category }));
+        setCategories(uniqueCategories);
+      }
+    } catch (err) {
+      console.error('Error loading categories:', err);
+    }
+  };
 
   const handleAddToCart = (phone) => {
     console.log('Adding to cart:', phone.name);
@@ -80,10 +134,28 @@ const HomePage = () => {
     setSelectedBrand('');
     setSelectedCategory('');
     setPriceRange({ min: 0, max: 50000000 });
-    setSortBy('name');
-    setSortOrder('asc');
+    setSortBy('createdAt');
+    setSortOrder('desc');
     setCurrentPage(1);
   };
+
+  if (loading) {
+    return (
+      <div className="app">
+        <Header />
+        <div className="loading">Đang tải...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="app">
+        <Header />
+        <div className="error">Lỗi: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="app">
@@ -104,37 +176,23 @@ const HomePage = () => {
       </section>
 
       <div className="container" style={{ paddingTop: 'var(--space-8)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-8)' }}>
-          <h2 style={{ fontSize: 'var(--font-size-2xl)', color: 'var(--gray-800)' }}>
-            Tất cả điện thoại ({filteredAndSortedPhones.length} sản phẩm)
-          </h2>
-          <button 
-            onClick={clearFilters}
-            className="btn btn-outline"
-            style={{ fontSize: 'var(--font-size-sm)' }}
-          >
-            Xóa bộ lọc
-          </button>
-        </div>
-
-        <div className="product-list-container">
-          {/* Sidebar Filters */}
-          <div className="filters-sidebar" style={{
-            background: 'white',
-            borderRadius: 'var(--radius-2xl)',
-            padding: 'var(--space-6)',
-            boxShadow: 'var(--shadow-md)',
-            border: '1px solid var(--gray-200)',
-            height: 'fit-content',
-            position: 'sticky',
-            top: '120px'
+        {/* Filters Bar */}
+        <div className="filters-bar" style={{
+          background: 'white',
+          borderRadius: 'var(--radius-2xl)',
+          padding: 'var(--space-6)',
+          boxShadow: 'var(--shadow-md)',
+          border: '1px solid var(--gray-200)',
+          marginBottom: 'var(--space-6)'
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            flexWrap: 'wrap', 
+            gap: 'var(--space-4)', 
+            alignItems: 'flex-start'
           }}>
-            <h3 style={{ marginBottom: 'var(--space-6)', color: 'var(--gray-800)', fontSize: 'var(--font-size-lg)' }}>
-              Bộ lọc
-            </h3>
-
-            <div className="filter-section" style={{ marginBottom: 'var(--space-6)' }}>
-              <h4 style={{ marginBottom: 'var(--space-3)', color: 'var(--gray-700)', fontSize: 'var(--font-size-sm)', fontWeight: '600' }}>
+            <div className="filter-item" style={{ minWidth: '180px' }}>
+              <h4 style={{ marginBottom: 'var(--space-2)', color: 'var(--gray-700)', fontSize: 'var(--font-size-sm)', fontWeight: '600' }}>
                 Tìm kiếm
               </h4>
               <input
@@ -156,8 +214,8 @@ const HomePage = () => {
               />
             </div>
 
-            <div className="filter-section" style={{ marginBottom: 'var(--space-6)' }}>
-              <h4 style={{ marginBottom: 'var(--space-3)', color: 'var(--gray-700)', fontSize: 'var(--font-size-sm)', fontWeight: '600' }}>
+            <div className="filter-item" style={{ minWidth: '140px' }}>
+              <h4 style={{ marginBottom: 'var(--space-2)', color: 'var(--gray-700)', fontSize: 'var(--font-size-sm)', fontWeight: '600' }}>
                 Thương hiệu
               </h4>
               <select
@@ -174,14 +232,14 @@ const HomePage = () => {
                 }}
               >
                 <option value="">Tất cả thương hiệu</option>
-                {mockBrands.map(brand => (
+                {brands.map(brand => (
                   <option key={brand.id} value={brand.name}>{brand.name}</option>
                 ))}
               </select>
             </div>
 
-            <div className="filter-section" style={{ marginBottom: 'var(--space-6)' }}>
-              <h4 style={{ marginBottom: 'var(--space-3)', color: 'var(--gray-700)', fontSize: 'var(--font-size-sm)', fontWeight: '600' }}>
+            <div className="filter-item" style={{ minWidth: '140px' }}>
+              <h4 style={{ marginBottom: 'var(--space-2)', color: 'var(--gray-700)', fontSize: 'var(--font-size-sm)', fontWeight: '600' }}>
                 Danh mục
               </h4>
               <select
@@ -198,95 +256,118 @@ const HomePage = () => {
                 }}
               >
                 <option value="">Tất cả danh mục</option>
-                {mockCategories.map(category => (
+                {categories.map(category => (
                   <option key={category.id} value={category.slug}>{category.name}</option>
                 ))}
               </select>
             </div>
 
-            <div className="filter-section" style={{ marginBottom: 'var(--space-6)' }}>
-              <h4 style={{ marginBottom: 'var(--space-3)', color: 'var(--gray-700)', fontSize: 'var(--font-size-sm)', fontWeight: '600' }}>
+            <div className="filter-item" style={{ minWidth: '180px' }}>
+              <h4 style={{ marginBottom: 'var(--space-2)', color: 'var(--gray-700)', fontSize: 'var(--font-size-sm)', fontWeight: '600' }}>
                 Khoảng giá
               </h4>
-              <div style={{ marginBottom: 'var(--space-3)' }}>
-                <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--gray-600)' }}>
-                  Min: {formatPrice(priceRange.min)}
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="50000000"
-                  step="1000000"
-                  value={priceRange.min}
-                  onChange={(e) => setPriceRange(prev => ({ ...prev, min: parseInt(e.target.value) }))}
-                  style={{ width: '100%', marginTop: 'var(--space-1)' }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--gray-600)' }}>
-                  Max: {formatPrice(priceRange.max)}
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="50000000"
-                  step="1000000"
-                  value={priceRange.max}
-                  onChange={(e) => setPriceRange(prev => ({ ...prev, max: parseInt(e.target.value) }))}
-                  style={{ width: '100%', marginTop: 'var(--space-1)' }}
-                />
+              <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--gray-600)' }}>
+                    Min: {formatPrice(priceRange.min)}
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="50000000"
+                    step="1000000"
+                    value={priceRange.min}
+                    onChange={(e) => setPriceRange(prev => ({ ...prev, min: parseInt(e.target.value) }))}
+                    style={{ width: '100%', marginTop: 'var(--space-1)' }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--gray-600)' }}>
+                    Max: {formatPrice(priceRange.max)}
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="50000000"
+                    step="1000000"
+                    value={priceRange.max}
+                    onChange={(e) => setPriceRange(prev => ({ ...prev, max: parseInt(e.target.value) }))}
+                    style={{ width: '100%', marginTop: 'var(--space-1)' }}
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="filter-section">
-              <h4 style={{ marginBottom: 'var(--space-3)', color: 'var(--gray-700)', fontSize: 'var(--font-size-sm)', fontWeight: '600' }}>
+            <div className="filter-item" style={{ minWidth: '140px' }}>
+              <h4 style={{ marginBottom: 'var(--space-2)', color: 'var(--gray-700)', fontSize: 'var(--font-size-sm)', fontWeight: '600' }}>
                 Sắp xếp
               </h4>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: 'var(--space-3)',
-                  border: '1px solid var(--gray-300)',
-                  borderRadius: 'var(--radius-lg)',
-                  fontSize: 'var(--font-size-sm)',
-                  outline: 'none',
-                  background: 'white',
-                  marginBottom: 'var(--space-2)'
-                }}
-              >
-                <option value="name">Tên A-Z</option>
-                <option value="price">Giá</option>
-                <option value="rating">Đánh giá</option>
-              </select>
-              <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: 'var(--space-3)',
-                  border: '1px solid var(--gray-300)',
-                  borderRadius: 'var(--radius-lg)',
-                  fontSize: 'var(--font-size-sm)',
-                  outline: 'none',
-                  background: 'white'
-                }}
-              >
-                <option value="asc">Tăng dần</option>
-                <option value="desc">Giảm dần</option>
-              </select>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', width: '100%' }}>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: 'var(--space-3)',
+                    border: '1px solid var(--gray-300)',
+                    borderRadius: 'var(--radius-lg)',
+                    fontSize: 'var(--font-size-sm)',
+                    outline: 'none',
+                    background: 'white'
+                  }}
+                >
+                  <option value="name">Tên A-Z</option>
+                  <option value="price">Giá</option>
+                  <option value="rating">Đánh giá</option>
+                </select>
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: 'var(--space-3)',
+                    border: '1px solid var(--gray-300)',
+                    borderRadius: 'var(--radius-lg)',
+                    fontSize: 'var(--font-size-sm)',
+                    outline: 'none',
+                    background: 'white'
+                  }}
+                >
+                  <option value="asc">Tăng dần</option>
+                  <option value="desc">Giảm dần</option>
+                </select>
+              </div>
             </div>
           </div>
+        </div>
 
-          {/* Products Grid */}
-          <div>
-            {paginatedPhones.length > 0 ? (
+        {/* Title and Clear Button */}
+        <div className="title-section">
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center'
+          }}>
+            <h2>
+              Tất cả điện thoại ({totalPhones} sản phẩm)
+            </h2>
+            <button 
+              onClick={clearFilters}
+              className="btn btn-outline"
+            >
+              Xóa bộ lọc
+            </button>
+          </div>
+        </div>
+
+        {/* Products Grid */}
+        <div>
+            {phones.length > 0 ? (
               <>
                 <div className="products-grid">
-                  {paginatedPhones.map(phone => (
+                  {phones.map(phone => (
                     <ProductCard
-                      key={phone.id}
+                      key={phone._id || phone.id}
                       phone={phone}
                       onAddToCart={handleAddToCart}
                       onViewDetail={handleViewDetail}
@@ -371,7 +452,6 @@ const HomePage = () => {
                 </button>
               </div>
             )}
-          </div>
         </div>
       </div>
 
