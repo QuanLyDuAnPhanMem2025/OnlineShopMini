@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
+import LoginModal from '../components/LoginModal';
 import { phoneService, formatPrice } from '../services/api';
+import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -12,6 +15,9 @@ const ProductDetailPage = () => {
   const [error, setError] = useState(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedSpecTab, setSelectedSpecTab] = useState('overview');
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     loadPhoneDetail();
@@ -36,8 +42,17 @@ const ProductDetailPage = () => {
   };
 
   const handleAddToCart = () => {
-    console.log('Adding to cart:', phone.name);
-    alert(`Đã thêm ${phone.name} vào giỏ hàng!`);
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
+    
+    try {
+      addToCart(phone);
+      alert(`Đã thêm ${phone.name} vào giỏ hàng!`);
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
   const handleBuyNow = () => {
@@ -324,6 +339,11 @@ const ProductDetailPage = () => {
           )}
         </div>
       </div>
+
+      <LoginModal 
+        isOpen={showLoginModal} 
+        onClose={() => setShowLoginModal(false)} 
+      />
     </div>
   );
 };
