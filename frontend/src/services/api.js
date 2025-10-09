@@ -396,11 +396,15 @@ export const phoneService = {
       console.log('Using mock data for phones');
       // Fallback to mock data
       const {
+        page = 1,
+        limit = 20,
         search: searchParam,
         brand: brandParam,
         category: categoryParam,
         minPrice: minPriceParam,
-        maxPrice: maxPriceParam
+        maxPrice: maxPriceParam,
+        sortBy = 'createdAt',
+        sortOrder = 'desc'
       } = params;
       
       const searchTerm = searchParam || '';

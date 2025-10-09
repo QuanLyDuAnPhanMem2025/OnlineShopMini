@@ -10,13 +10,27 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
+  // Search query - hoạt động real-time
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-  const [selectedBrand, setSelectedBrand] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 50000000 });
-  const [sortBy, setSortBy] = useState('createdAt');
-  const [sortOrder, setSortOrder] = useState('desc');
+  
+  // Filter values - chỉ áp dụng khi click nút "Áp dụng"
+  const [tempFilters, setTempFilters] = useState({
+    brand: '',
+    category: '',
+    priceRange: { min: 0, max: 50000000 },
+    sortBy: 'createdAt',
+    sortOrder: 'desc'
+  });
+  
+  const [activeFilters, setActiveFilters] = useState({
+    brand: '',
+    category: '',
+    priceRange: { min: 0, max: 50000000 },
+    sortBy: 'createdAt',
+    sortOrder: 'desc'
+  });
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalPhones, setTotalPhones] = useState(0);
@@ -36,10 +50,10 @@ const HomePage = () => {
     loadData();
   }, []);
 
-  // Load phones when filters change
+  // Load phones when search query or active filters change
   useEffect(() => {
     loadPhones();
-  }, [currentPage, selectedBrand, selectedCategory, priceRange, sortBy, sortOrder, debouncedSearchQuery]);
+  }, [currentPage, activeFilters, debouncedSearchQuery]);
 
   const loadData = async () => {
     try {
@@ -61,13 +75,13 @@ const HomePage = () => {
       const params = {
         page: currentPage,
         limit: itemsPerPage,
-        brand: selectedBrand || undefined,
-        category: selectedCategory || undefined,
-        minPrice: priceRange.min || undefined,
-        maxPrice: priceRange.max || undefined,
+        brand: activeFilters.brand || undefined,
+        category: activeFilters.category || undefined,
+        minPrice: activeFilters.priceRange.min || undefined,
+        maxPrice: activeFilters.priceRange.max || undefined,
         search: debouncedSearchQuery || undefined,
-        sortBy,
-        sortOrder
+        sortBy: activeFilters.sortBy,
+        sortOrder: activeFilters.sortOrder
       };
 
       const response = await phoneService.getPhones(params);
@@ -87,7 +101,12 @@ const HomePage = () => {
       // Chỉ load brands một lần và cache
       if (brands.length > 0) return;
       
-      const response = await phoneService.getPhones({ limit: 1000, search: '' });
+      const response = await phoneService.getPhones({ 
+        limit: 1000, 
+        search: '',
+        sortBy: 'createdAt',
+        sortOrder: 'desc'
+      });
       if (response.success) {
         const uniqueBrands = [...new Set(response.data.phones.map(phone => phone.brand))]
           .map(brand => ({ id: brand, name: brand }));
@@ -103,7 +122,12 @@ const HomePage = () => {
       // Chỉ load categories một lần và cache
       if (categories.length > 0) return;
       
-      const response = await phoneService.getPhones({ limit: 1000, search: '' });
+      const response = await phoneService.getPhones({ 
+        limit: 1000, 
+        search: '',
+        sortBy: 'createdAt',
+        sortOrder: 'desc'
+      });
       if (response.success) {
         const uniqueCategories = [...new Set(response.data.phones.map(phone => phone.subcategory))]
           .map(category => ({ id: category, name: category, slug: category }));
@@ -129,13 +153,22 @@ const HomePage = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const applyFilters = () => {
+    setActiveFilters({ ...tempFilters });
+    setCurrentPage(1);
+  };
+
   const clearFilters = () => {
     setSearchQuery('');
-    setSelectedBrand('');
-    setSelectedCategory('');
-    setPriceRange({ min: 0, max: 50000000 });
-    setSortBy('createdAt');
-    setSortOrder('desc');
+    const defaultFilters = {
+      brand: '',
+      category: '',
+      priceRange: { min: 0, max: 50000000 },
+      sortBy: 'createdAt',
+      sortOrder: 'desc'
+    };
+    setTempFilters(defaultFilters);
+    setActiveFilters(defaultFilters);
     setCurrentPage(1);
   };
 
@@ -219,8 +252,8 @@ const HomePage = () => {
                 Thương hiệu
               </h4>
               <select
-                value={selectedBrand}
-                onChange={(e) => setSelectedBrand(e.target.value)}
+                value={tempFilters.brand}
+                onChange={(e) => setTempFilters(prev => ({ ...prev, brand: e.target.value }))}
                 style={{
                   width: '100%',
                   padding: 'var(--space-3)',
@@ -243,8 +276,8 @@ const HomePage = () => {
                 Danh mục
               </h4>
               <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                value={tempFilters.category}
+                onChange={(e) => setTempFilters(prev => ({ ...prev, category: e.target.value }))}
                 style={{
                   width: '100%',
                   padding: 'var(--space-3)',
@@ -269,29 +302,35 @@ const HomePage = () => {
               <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--gray-600)' }}>
-                    Min: {formatPrice(priceRange.min)}
+                    Min: {formatPrice(tempFilters.priceRange.min)}
                   </label>
                   <input
                     type="range"
                     min="0"
                     max="50000000"
                     step="1000000"
-                    value={priceRange.min}
-                    onChange={(e) => setPriceRange(prev => ({ ...prev, min: parseInt(e.target.value) }))}
+                    value={tempFilters.priceRange.min}
+                    onChange={(e) => setTempFilters(prev => ({ 
+                      ...prev, 
+                      priceRange: { ...prev.priceRange, min: parseInt(e.target.value) }
+                    }))}
                     style={{ width: '100%', marginTop: 'var(--space-1)' }}
                   />
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--gray-600)' }}>
-                    Max: {formatPrice(priceRange.max)}
+                    Max: {formatPrice(tempFilters.priceRange.max)}
                   </label>
                   <input
                     type="range"
                     min="0"
                     max="50000000"
                     step="1000000"
-                    value={priceRange.max}
-                    onChange={(e) => setPriceRange(prev => ({ ...prev, max: parseInt(e.target.value) }))}
+                    value={tempFilters.priceRange.max}
+                    onChange={(e) => setTempFilters(prev => ({ 
+                      ...prev, 
+                      priceRange: { ...prev.priceRange, max: parseInt(e.target.value) }
+                    }))}
                     style={{ width: '100%', marginTop: 'var(--space-1)' }}
                   />
                 </div>
@@ -304,8 +343,8 @@ const HomePage = () => {
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', width: '100%' }}>
                 <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
+                  value={tempFilters.sortBy}
+                  onChange={(e) => setTempFilters(prev => ({ ...prev, sortBy: e.target.value }))}
                   style={{
                     width: '100%',
                     padding: 'var(--space-3)',
@@ -321,8 +360,8 @@ const HomePage = () => {
                   <option value="rating">Đánh giá</option>
                 </select>
                 <select
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value)}
+                  value={tempFilters.sortOrder}
+                  onChange={(e) => setTempFilters(prev => ({ ...prev, sortOrder: e.target.value }))}
                   style={{
                     width: '100%',
                     padding: 'var(--space-3)',
@@ -341,7 +380,7 @@ const HomePage = () => {
           </div>
         </div>
 
-        {/* Title and Clear Button */}
+        {/* Title and Action Buttons */}
         <div className="title-section">
           <div style={{ 
             display: 'flex', 
@@ -351,12 +390,20 @@ const HomePage = () => {
             <h2>
               Tất cả điện thoại ({totalPhones} sản phẩm)
             </h2>
-            <button 
-              onClick={clearFilters}
-              className="btn btn-outline"
-            >
-              Xóa bộ lọc
-            </button>
+            <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+              <button 
+                onClick={applyFilters}
+                className="btn btn-primary"
+              >
+                Áp dụng
+              </button>
+              <button 
+                onClick={clearFilters}
+                className="btn btn-outline"
+              >
+                Xóa bộ lọc
+              </button>
+            </div>
           </div>
         </div>
 

@@ -437,7 +437,7 @@ body {
 .product-image-container-new {
   position: relative;
   overflow: hidden;
-  height: 180px;
+  height: 600px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -445,8 +445,8 @@ body {
 }
 
 .product-image-new {
-  width: 120%;
-  height: 120%;
+  width: 180%;
+  height: 180%;
   object-fit: cover;
   object-position: center;
   background: var(--gray-50);
@@ -455,7 +455,7 @@ body {
 }
 
 .product-card-new:hover .product-image-new {
-  transform: scale(1.2);
+  transform: scale(1.8);
 }
 
 .discount-badge-new {
@@ -472,10 +472,10 @@ body {
 }
 
 .product-info-new {
-  padding: var(--space-3);
+  padding: var(--space-2);
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-1);
   flex: 1;
 }
 
@@ -505,8 +505,8 @@ body {
 .product-specs-new {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-1);
-  margin: var(--space-1) 0;
+  gap: 3px;
+  margin: 4px 0;
 }
 
 .spec-item {
@@ -535,7 +535,7 @@ body {
 }
 
 .current-price-new {
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   font-weight: 700;
   color: var(--accent-color);
 }
@@ -555,7 +555,7 @@ body {
 
 .stars-new {
   color: var(--secondary-color);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: 600;
 }
 
@@ -1087,17 +1087,17 @@ body {
   
   /* Mobile Product Card */
   .product-image-container-new {
-    height: 140px;
+    height: 300px;
   }
   
   .product-image-new {
-    width: 130%;
-    height: 130%;
+    width: 200%;
+    height: 200%;
     transform: scale(1.15);
   }
   
   .product-card-new:hover .product-image-new {
-    transform: scale(1.25);
+    transform: scale(1.6);
   }
   
   .product-info-new {
@@ -1625,7 +1625,7 @@ html {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-3);
+  padding: var(--space-2);
   background: var(--gray-50);
   border-radius: var(--radius-lg);
 }
