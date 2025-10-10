@@ -14,9 +14,17 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'Please add a password'],
     minlength: 6,
-    select: false
+    select: false,
+    // Password không bắt buộc cho Google OAuth users
+    required: function() {
+      return !this.googleId;
+    }
+  },
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true // Cho phép null/undefined nhưng unique khi có giá trị
   },
   firstName: {
     type: String,
@@ -66,9 +74,9 @@ const userSchema = new mongoose.Schema({
 // Index
 userSchema.index({ email: 1 });
 
-// Encrypt password using bcrypt
+// Encrypt password using bcrypt (chỉ khi có password)
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
+  if (!this.isModified('password') || !this.password) {
     next();
   }
 
@@ -79,6 +87,39 @@ userSchema.pre('save', async function(next) {
 // Match user entered password to hashed password in database
 userSchema.methods.matchPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Static method để tìm hoặc tạo user từ Google profile
+userSchema.statics.findOrCreateFromGoogle = async function(googleProfile) {
+  const { id: googleId, emails, name, photos } = googleProfile;
+  const email = emails[0].value;
+  
+  // Tìm user theo googleId hoặc email
+  let user = await this.findOne({
+    $or: [{ googleId }, { email }]
+  });
+  
+  if (user) {
+    // Cập nhật googleId nếu user đăng ký bằng email trước đó
+    if (!user.googleId) {
+      user.googleId = googleId;
+      user.avatar = photos[0].value;
+      await user.save();
+    }
+    return user;
+  }
+  
+  // Tạo user mới
+  user = await this.create({
+    googleId,
+    email,
+    firstName: name.givenName,
+    lastName: name.familyName,
+    avatar: photos[0].value,
+    isActive: true
+  });
+  
+  return user;
 };
 
 module.exports = mongoose.model('User', userSchema);

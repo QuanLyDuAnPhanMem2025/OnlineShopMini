@@ -312,24 +312,72 @@ const ProductDetailPage = () => {
 
           {/* Related Products */}
           {relatedPhones.length > 0 && (
-            <div className="related-products">
-              <h2>Sản phẩm liên quan</h2>
-              <div className="related-products-grid">
+            <div className="related-products" style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid #e5e7eb' }}>
+              <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', fontWeight: '600', color: '#1f2937' }}>
+                Sản phẩm liên quan
+              </h2>
+              <div className="related-products-grid" style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+                gap: '1rem' 
+              }}>
                 {relatedPhones.map(relatedPhone => (
                   <div 
                     key={relatedPhone._id} 
                     className="related-product-card"
                     onClick={() => navigate(`/product/${relatedPhone._id}`)}
+                    style={{
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      padding: '1rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      backgroundColor: '#fff'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.transform = 'translateY(-2px)';
+                      e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = 'none';
+                    }}
                   >
                     <img 
                       src={relatedPhone.thumbnail} 
                       alt={relatedPhone.name}
                       className="related-product-image"
+                      style={{
+                        width: '100%',
+                        height: '150px',
+                        objectFit: 'cover',
+                        borderRadius: '4px',
+                        marginBottom: '0.75rem'
+                      }}
                     />
                     <div className="related-product-info">
-                      <h4>{relatedPhone.name}</h4>
-                      <div className="related-product-price">
+                      <h4 style={{ 
+                        fontSize: '0.9rem', 
+                        fontWeight: '500', 
+                        marginBottom: '0.5rem',
+                        color: '#374151',
+                        lineHeight: '1.4'
+                      }}>
+                        {relatedPhone.name}
+                      </h4>
+                      <div className="related-product-price" style={{ 
+                        fontSize: '1rem', 
+                        fontWeight: '600', 
+                        color: '#dc2626' 
+                      }}>
                         {formatPrice(relatedPhone.price)}
+                      </div>
+                      <div style={{ 
+                        fontSize: '0.8rem', 
+                        color: '#6b7280',
+                        marginTop: '0.25rem'
+                      }}>
+                        ⭐ {relatedPhone.averageRating.toFixed(1)} ({relatedPhone.reviewCount})
                       </div>
                     </div>
                   </div>

@@ -4,6 +4,12 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+// Import database connection
+const connectDB = require('./config/database');
+
+// Import passport configuration
+const passport = require('./config/passport');
+
 // Import routes
 const authRoutes = require('./routes/auth');
 const phoneRoutes = require('./routes/phones');
@@ -36,6 +42,9 @@ app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Passport middleware
+app.use(passport.initialize());
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -57,13 +66,22 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Start server
-const startServer = () => {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-    console.log(`📊 Using mock data service (no database required)`);
-  });
+const startServer = async () => {
+  try {
+    // Connect to MongoDB first
+    await connectDB();
+    
+    // Then start the server
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+      console.log(`📊 Connected to MongoDB Atlas`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error.message);
+    process.exit(1);
+  }
 };
 
 // Handle unhandled promise rejections

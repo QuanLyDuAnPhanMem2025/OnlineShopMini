@@ -189,6 +189,47 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Google login function
+  const googleLogin = () => {
+    authService.googleLogin();
+  };
+
+  // Handle Google OAuth success
+  const handleGoogleSuccess = async (token) => {
+    try {
+      dispatch({ type: 'LOGIN_START' });
+      
+      const response = await authService.handleGoogleSuccess(token);
+      
+      if (response.success) {
+        const { user, token: authToken } = response.data;
+        
+        // Store token in localStorage
+        localStorage.setItem('token', authToken);
+        
+        dispatch({
+          type: 'LOGIN_SUCCESS',
+          payload: { user, token: authToken }
+        });
+        
+        return { success: true };
+      } else {
+        dispatch({
+          type: 'LOGIN_FAILURE',
+          payload: response.message || 'Google đăng nhập thất bại'
+        });
+        return { success: false, error: response.message };
+      }
+    } catch (error) {
+      const errorMessage = error.message || 'Có lỗi xảy ra khi đăng nhập Google';
+      dispatch({
+        type: 'LOGIN_FAILURE',
+        payload: errorMessage
+      });
+      return { success: false, error: errorMessage };
+    }
+  };
+
   // Logout function
   const logout = () => {
     localStorage.removeItem('token');
@@ -204,6 +245,8 @@ export const AuthProvider = ({ children }) => {
     ...state,
     login,
     register,
+    googleLogin,
+    handleGoogleSuccess,
     logout,
     clearError
   };

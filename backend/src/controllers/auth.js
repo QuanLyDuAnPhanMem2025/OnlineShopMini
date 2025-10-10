@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const passport = require('passport');
 const User = require('../models/User');
 const { asyncHandler, createError } = require('../middleware/errorHandler');
 
@@ -129,9 +130,79 @@ const refreshToken = asyncHandler(async (req, res, next) => {
   }
 });
 
+// @desc    Google OAuth login
+// @route   GET /api/auth/google
+// @access  Public
+const googleLogin = passport.authenticate('google', {
+  scope: ['profile', 'email']
+});
+
+// @desc    Google OAuth callback
+// @route   GET /api/auth/google/callback
+// @access  Public
+const googleCallback = asyncHandler(async (req, res, next) => {
+  passport.authenticate('google', async (err, user) => {
+    if (err) {
+      return next(createError('Google authentication failed', 401));
+    }
+
+    if (!user) {
+      return next(createError('Google authentication failed', 401));
+    }
+
+    const token = generateToken(user._id);
+
+    // Redirect to frontend with token
+    const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173';
+    // Get the first origin if multiple are specified
+    const frontendUrl = corsOrigin.split(',')[0].trim();
+    res.redirect(`${frontendUrl}/auth/success?token=${token}`);
+  })(req, res, next);
+});
+
+// @desc    Google OAuth success handler
+// @route   GET /api/auth/google/success
+// @access  Public
+const googleSuccess = asyncHandler(async (req, res, next) => {
+  const { token } = req.query;
+
+  if (!token) {
+    return next(createError('No token provided', 400));
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return next(createError('User not found', 404));
+    }
+
+    res.json({
+      success: true,
+      data: {
+        token,
+        user: {
+          id: user._id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          avatar: user.avatar
+        }
+      }
+    });
+  } catch (error) {
+    return next(createError('Invalid token', 401));
+  }
+});
+
 module.exports = {
   register,
   login,
   getMe,
-  refreshToken
+  refreshToken,
+  googleLogin,
+  googleCallback,
+  googleSuccess
 };

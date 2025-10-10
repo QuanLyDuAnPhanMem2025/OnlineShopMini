@@ -7,7 +7,7 @@ const LoginModal = ({ isOpen, onClose }) => {
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
-  const { login, loading, error, clearError } = useAuth();
+  const { login, googleLogin, loading, error, clearError } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,8 +37,7 @@ const LoginModal = ({ isOpen, onClose }) => {
   };
 
   const handleGoogleLogin = () => {
-    // TODO: Implement Google OAuth
-    alert('Google Login sẽ được implement sau!');
+    googleLogin();
   };
 
   const handleClose = () => {

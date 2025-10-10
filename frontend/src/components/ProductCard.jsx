@@ -43,7 +43,7 @@ const ProductCard = ({ phone, onAddToCart, onViewDetail }) => {
           alt={phone.name}
           className="product-image-new"
           onError={(e) => {
-            e.target.src = 'https://via.placeholder.com/300x280/6366f1/ffffff?text=No+Image';
+            e.target.src = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300';
           }}
         />
         {discount > 0 && (

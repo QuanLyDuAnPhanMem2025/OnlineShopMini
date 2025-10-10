@@ -18,7 +18,7 @@ const getPhones = asyncHandler(async (req, res, next) => {
     search
   } = req.query;
 
-  const result = phoneService.getPhones({
+  const result = await phoneService.getPhones({
     page: parseInt(page),
     limit: parseInt(limit),
     brand,
@@ -42,7 +42,7 @@ const getPhones = asyncHandler(async (req, res, next) => {
 // @access  Public
 const getPhone = asyncHandler(async (req, res, next) => {
   try {
-    const result = phoneService.getPhone(req.params.id);
+    const result = await phoneService.getPhone(req.params.id);
     
     res.json({
       success: true,
@@ -57,12 +57,16 @@ const getPhone = asyncHandler(async (req, res, next) => {
 // @route   POST /api/phones
 // @access  Private/Admin
 const createPhone = asyncHandler(async (req, res, next) => {
-  const phone = phoneService.createPhone(req.body);
+  try {
+    const phone = await phoneService.createPhone(req.body);
 
-  res.status(201).json({
-    success: true,
-    data: phone
-  });
+    res.status(201).json({
+      success: true,
+      data: phone
+    });
+  } catch (error) {
+    return next(createError(error.message, 400));
+  }
 });
 
 // @desc    Update phone
@@ -70,7 +74,7 @@ const createPhone = asyncHandler(async (req, res, next) => {
 // @access  Private/Admin
 const updatePhone = asyncHandler(async (req, res, next) => {
   try {
-    const phone = phoneService.updatePhone(req.params.id, req.body);
+    const phone = await phoneService.updatePhone(req.params.id, req.body);
     
     res.json({
       success: true,
@@ -86,7 +90,7 @@ const updatePhone = asyncHandler(async (req, res, next) => {
 // @access  Private/Admin
 const deletePhone = asyncHandler(async (req, res, next) => {
   try {
-    phoneService.deletePhone(req.params.id);
+    await phoneService.deletePhone(req.params.id);
     
     res.json({
       success: true,
@@ -107,13 +111,17 @@ const comparePhones = asyncHandler(async (req, res, next) => {
     return next(createError('Phone IDs are required', 400));
   }
 
-  const phoneIds = ids.split(',');
-  const phones = phoneService.comparePhones(phoneIds);
+  try {
+    const phoneIds = ids.split(',');
+    const phones = await phoneService.comparePhones(phoneIds);
 
-  res.json({
-    success: true,
-    data: phones
-  });
+    res.json({
+      success: true,
+      data: phones
+    });
+  } catch (error) {
+    return next(createError(error.message, 400));
+  }
 });
 
 // @desc    Search phones
@@ -139,12 +147,16 @@ const searchPhones = asyncHandler(async (req, res, next) => {
     parsedFilters.category = category;
   }
 
-  const phones = phoneService.searchPhones(q, parsedFilters);
+  try {
+    const phones = await phoneService.searchPhones(q, parsedFilters);
 
-  res.json({
-    success: true,
-    data: phones
-  });
+    res.json({
+      success: true,
+      data: phones
+    });
+  } catch (error) {
+    return next(createError(error.message, 400));
+  }
 });
 
 module.exports = {

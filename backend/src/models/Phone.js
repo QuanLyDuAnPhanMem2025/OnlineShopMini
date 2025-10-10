@@ -141,4 +141,4 @@ phoneSchema.index({ tags: 1 });
 phoneSchema.index({ name: 'text', description: 'text' });
 phoneSchema.index({ status: 1, publishedAt: -1 });
 
-module.exports = mongoose.model('Phone', phoneSchema);
+module.exports = mongoose.model('Phone', phoneSchema, 'phone');

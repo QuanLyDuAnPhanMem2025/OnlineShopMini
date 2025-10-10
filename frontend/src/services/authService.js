@@ -184,5 +184,34 @@ export const authService = {
         }
       };
     }
+  },
+
+  // Google OAuth login
+  googleLogin: () => {
+    // Redirect to backend Google OAuth endpoint
+    window.location.href = `${API_BASE_URL}/auth/google`;
+  },
+
+  // Handle Google OAuth success
+  handleGoogleSuccess: async (token) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/google/success?token=${token}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Google đăng nhập thất bại');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Google OAuth error:', error);
+      throw error;
+    }
   }
 };
