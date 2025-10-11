@@ -6,7 +6,7 @@ import Header from '../components/Header';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 const ProfilePage = () => {
-  const { user, logout } = useAuth();
+  const { user, logout: _logout } = useAuth();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('profile');
   const [orders, setOrders] = useState([]);
