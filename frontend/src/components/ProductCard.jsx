@@ -5,16 +5,12 @@ const ProductCard = ({ phone, onAddToCart, onViewDetail: _onViewDetail }) => {
   const navigate = useNavigate();
   const discount = getDiscountPercentage(phone.originalPrice, phone.price);
 
-  const _handleAddToCart = (e) => {
-    e.stopPropagation();
-    onAddToCart(phone);
-  };
 
   const handleViewDetail = () => {
     navigate(`/product/${phone._id || phone.id}`);
   };
 
-  const renderStars = (rating) => {
+  const _renderStars = (rating) => {
     const stars = [];
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 !== 0;

@@ -44,7 +44,7 @@ const ProfilePage = () => {
     }
   };
 
-  const handleLogout = () => {
+  const _handleLogout = () => {
     logout();
   };
 

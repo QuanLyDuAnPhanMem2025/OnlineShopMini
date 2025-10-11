@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import ProductCard from '../components/ProductCard';
 import { phoneService, formatPrice } from '../services/api';

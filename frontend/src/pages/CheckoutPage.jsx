@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
-import { orderService, formatPrice } from '../services/api';
+import { orderService } from '../services/api';
 import Header from '../components/Header';
 import ProtectedRoute from '../components/ProtectedRoute';
 

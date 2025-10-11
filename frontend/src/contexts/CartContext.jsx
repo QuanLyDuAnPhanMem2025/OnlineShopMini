@@ -5,7 +5,7 @@ const CartContext = createContext(null);
 
 const cartReducer = (state, action) => {
   switch (action.type) {
-    case 'ADD_TO_CART':
+    case 'ADD_TO_CART': {
       // Tạo unique ID cho mỗi item được thêm vào giỏ
       const newItem = {
         ...action.payload,
@@ -17,6 +17,7 @@ const cartReducer = (state, action) => {
         ...state,
         items: [...state.items, newItem],
       };
+    }
     case 'REMOVE_FROM_CART':
       return {
         ...state,
