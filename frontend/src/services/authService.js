@@ -21,6 +21,7 @@ export const authService = {
 
       return data;
     } catch (error) {
+      console.error('Auth service error:', error);
       console.log('Using mock auth for login');
       // Mock login for development
       if (email === 'admin@phonestore.com' && password === '123456') {

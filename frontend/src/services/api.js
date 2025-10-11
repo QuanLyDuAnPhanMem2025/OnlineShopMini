@@ -343,7 +343,7 @@ const mockCategories = [
 ];
 
 // Check if backend is available
-const isBackendAvailable = async () => {
+const _isBackendAvailable = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/phones?limit=1`, {
       method: 'GET',
@@ -351,6 +351,7 @@ const isBackendAvailable = async () => {
     });
     return response.ok;
   } catch (error) {
+    console.error('Backend check failed:', error);
     return false;
   }
 };
@@ -393,6 +394,7 @@ export const phoneService = {
 
       return await response.json();
     } catch (error) {
+      console.error('Fetch phones failed:', error);
       console.log('Using mock data for phones');
       // Fallback to mock data
       const {
@@ -485,6 +487,7 @@ export const phoneService = {
 
       return await response.json();
     } catch (error) {
+      console.error('Fetch phone failed:', error);
       console.log('Using mock data for phone');
       const phone = mockPhones.find(p => p.id === parseInt(id));
       if (!phone) {
@@ -520,6 +523,7 @@ export const phoneService = {
 
       return await response.json();
     } catch (error) {
+      console.error('Search failed:', error);
       console.log('Using mock data for search');
       const filtered = mockPhones.filter(phone => 
         phone.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -545,6 +549,7 @@ export const phoneService = {
 
       return await response.json();
     } catch (error) {
+      console.error('Compare failed:', error);
       console.log('Using mock data for compare');
       const phones = mockPhones.filter(phone => ids.includes(phone.id.toString()));
       return {
@@ -567,6 +572,7 @@ export const brandService = {
 
       return await response.json();
     } catch (error) {
+      console.error('Fetch brands failed:', error);
       console.log('Using mock data for brands');
       return {
         success: true,
@@ -588,6 +594,7 @@ export const categoryService = {
 
       return await response.json();
     } catch (error) {
+      console.error('Fetch categories failed:', error);
       console.log('Using mock data for categories');
       return {
         success: true,
@@ -682,6 +689,7 @@ export const orderService = {
 
       return await response.json();
     } catch (error) {
+      console.error('Fetch order failed:', error);
       console.log('Backend not available, using local order');
       // Fallback: Get order from localStorage
       const orders = JSON.parse(localStorage.getItem('userOrders') || '[]');
