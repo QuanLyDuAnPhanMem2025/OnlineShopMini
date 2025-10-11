@@ -5,7 +5,6 @@ const ProductCard = ({ phone, onAddToCart, onViewDetail: _onViewDetail }) => {
   const navigate = useNavigate();
   const discount = getDiscountPercentage(phone.originalPrice, phone.price);
 
-
   const handleViewDetail = () => {
     navigate(`/product/${phone._id || phone.id}`);
   };
