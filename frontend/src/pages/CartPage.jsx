@@ -13,9 +13,9 @@ const CartPage = () => {
     selectAll,
     unselectAll,
     removeSelected,
-    getSelectedItems,
-    getSelectedItemsCount,
-    getSelectedTotalPrice,
+    selectedItems,
+    selectedItemsCount,
+    selectedTotalPrice,
     clearCart 
   } = useCart();
   const { user } = useAuth();
@@ -30,7 +30,6 @@ const CartPage = () => {
   };
 
   const handleCheckout = () => {
-    const selectedItems = getSelectedItems();
     if (selectedItems.length === 0) {
       alert('Vui lòng chọn ít nhất một sản phẩm để thanh toán!');
       return;
@@ -38,9 +37,8 @@ const CartPage = () => {
     navigate('/checkout');
   };
 
-  const selectedItems = getSelectedItems();
-  const selectedCount = getSelectedItemsCount();
-  const selectedTotal = getSelectedTotalPrice();
+  const selectedCount = selectedItemsCount;
+  const selectedTotal = selectedTotalPrice;
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -139,10 +137,10 @@ const CartPage = () => {
                       </div>
                       <div className="cart-item-image">
                         <img 
-                          src={item.thumbnail || item.image || '/api/placeholder/150/150'} 
+                          src={item.thumbnail || (item.images && item.images[0]) || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300'} 
                           alt={item.name}
                           onError={(e) => {
-                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDE1MCAxNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik03NSA0MEM4NS41IDQwIDk0IDQ4LjUgOTQgNTlDOTQgNjkuNSA4NS41IDc4IDc1IDc4QzY0LjUgNzggNTYgNjkuNSA1NiA1OUM1NiA0OC41IDY0LjUgNDAgNzUgNDBaIiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik03NSA2MkM3OC44NjYgNjIgODIgNTguODY2IDgyIDU1QzgyIDUxLjEzNCA3OC44NjYgNDggNzUgNDhDNzEuMTM0IDQ4IDY4IDUxLjEzNCA2OCA1NUM2OCA1OC44NjYgNzEuMTM0IDYyIDc1IDYyWiIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4K';
+                            e.target.src = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300';
                           }}
                         />
                       </div>

@@ -30,13 +30,33 @@ app.use(cors({
   credentials: true
 }));
 
-// Rate limiting
-const limiter = rateLimit({
+// Rate limiting - Disabled for development
+// Uncomment these lines for production:
+/*
+const generalLimiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000'), // limit each IP to 1000 requests per windowMs (increased for dev)
-  message: 'Too many requests from this IP, please try again later.'
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000'), // limit each IP to 1000 requests per windowMs
+  message: {
+    success: false,
+    error: 'Too many requests from this IP, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
 });
-app.use(limiter);
+
+const authLimiter = rateLimit({
+  windowMs: parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS || '60000'), // 1 minute
+  max: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS || '50'), // limit each IP to 50 auth requests per minute
+  message: {
+    success: false,
+    error: 'Too many authentication attempts, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+app.use(generalLimiter);
+*/
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));

@@ -13,6 +13,7 @@ passport.use(new GoogleStrategy({
     const user = await User.findOrCreateFromGoogle(profile);
     return done(null, user);
   } catch (error) {
+    console.error('Google OAuth Error:', error);
     return done(error, null);
   }
 }));

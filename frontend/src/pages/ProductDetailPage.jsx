@@ -58,8 +58,20 @@ const ProductDetailPage = () => {
   };
 
   const handleBuyNow = () => {
-    console.log('Buy now:', phone.name);
-    alert(`Mua ngay ${phone.name}!`);
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
+    
+    try {
+      // Thêm sản phẩm vào giỏ hàng
+      addToCart(phone);
+      
+      // Chuyển đến trang checkout
+      navigate('/checkout');
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
   if (loading) {

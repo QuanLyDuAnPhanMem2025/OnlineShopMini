@@ -66,6 +66,10 @@ const getOrder = asyncHandler(async (req, res, next) => {
 // @route   POST /api/orders
 // @access  Private
 const createOrder = asyncHandler(async (req, res, next) => {
+  console.log('=== CREATE ORDER REQUEST ===');
+  console.log('User:', req.user);
+  console.log('Request body:', req.body);
+  
   const { items, shippingAddress, paymentMethod, notes } = req.body;
 
   if (!items || items.length === 0) {
@@ -86,13 +90,13 @@ const createOrder = asyncHandler(async (req, res, next) => {
       return next(createError(`Insufficient stock for ${phone.name}`, 400));
     }
 
-    const itemTotal = phone.currentPrice * item.quantity;
+    const itemTotal = phone.price * item.quantity;
     subtotal += itemTotal;
 
     orderItems.push({
       phone: phone._id,
       name: phone.name,
-      price: phone.currentPrice,
+      price: phone.price,
       quantity: item.quantity,
       image: phone.thumbnail
     });
@@ -100,6 +104,22 @@ const createOrder = asyncHandler(async (req, res, next) => {
 
   const shippingFee = subtotal >= 500000 ? 0 : 30000; // Free shipping over 500k
   const total = subtotal + shippingFee;
+
+  // Generate order number
+  const count = await Order.countDocuments();
+  const orderNumber = `ORD${String(count + 1).padStart(6, '0')}`;
+
+  console.log('Creating order with data:', {
+    user: req.user.id,
+    items: orderItems,
+    shippingAddress,
+    paymentMethod,
+    subtotal,
+    shippingFee,
+    total,
+    notes,
+    orderNumber
+  });
 
   const order = await Order.create({
     user: req.user.id,
@@ -109,8 +129,11 @@ const createOrder = asyncHandler(async (req, res, next) => {
     subtotal,
     shippingFee,
     total,
-    notes
+    notes,
+    orderNumber
   });
+
+  console.log('Order created successfully:', order);
 
   // Update phone stock
   for (const item of items) {
@@ -174,10 +197,15 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
 // @route   GET /api/orders/my-orders
 // @access  Private
 const getUserOrders = asyncHandler(async (req, res, next) => {
+  console.log('=== GET USER ORDERS ===');
+  console.log('User:', req.user);
+  
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
+  console.log('Querying orders for user:', req.user.id);
+  
   const orders = await Order.find({ user: req.user.id })
     .populate('items.phone', 'name brand thumbnail')
     .sort({ createdAt: -1 })
@@ -185,6 +213,9 @@ const getUserOrders = asyncHandler(async (req, res, next) => {
     .limit(limit);
 
   const total = await Order.countDocuments({ user: req.user.id });
+  
+  console.log('Found orders:', orders.length);
+  console.log('Total orders:', total);
 
   res.json({
     success: true,

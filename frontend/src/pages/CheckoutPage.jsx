@@ -2,15 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
+import { orderService, formatPrice } from '../services/api';
 import Header from '../components/Header';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 const CheckoutPage = () => {
-  const { getSelectedItems, getSelectedTotalPrice, clearCart } = useCart();
+  const { selectedItems, selectedTotalPrice, clearCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
-  
-  const selectedItems = getSelectedItems();
   
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
@@ -54,7 +53,7 @@ const CheckoutPage = () => {
       // Prepare order data
       const orderData = {
         items: selectedItems.map(item => ({
-          phoneId: item.id,
+          phoneId: item.id || item._id,
           quantity: item.quantity
         })),
         shippingAddress: formData,
@@ -62,18 +61,24 @@ const CheckoutPage = () => {
         notes: formData.note
       };
 
-      // TODO: Call API to create order
-      console.log('Creating order:', orderData);
+      console.log('Creating order with data:', orderData);
+
+      // Call API to create order
+      const response = await orderService.createOrder(orderData);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('Order creation response:', response);
       
-      // Clear cart and redirect
-      clearCart();
-      alert('Đặt hàng thành công! Chúng tôi sẽ liên hệ với bạn sớm.');
-      navigate('/profile?tab=orders');
+      if (response.success) {
+        // Clear cart and redirect
+        clearCart();
+        alert('Đặt hàng thành công! Chúng tôi sẽ liên hệ với bạn sớm.');
+        navigate('/profile?tab=orders');
+      } else {
+        throw new Error('Failed to create order');
+      }
       
     } catch (err) {
+      console.error('Order creation error:', err);
       setError(err.message || 'Có lỗi xảy ra khi đặt hàng');
     } finally {
       setLoading(false);
@@ -100,7 +105,7 @@ const CheckoutPage = () => {
     }).format(price);
   };
 
-  const subtotal = getSelectedTotalPrice();
+  const subtotal = selectedTotalPrice;
   const shippingFee = subtotal >= 500000 ? 0 : 30000;
   const total = subtotal + shippingFee;
 
@@ -314,11 +319,11 @@ const CheckoutPage = () => {
                     {selectedItems.map((item) => (
                       <div key={item.cartItemId} className="order-item">
                         <img 
-                          src={item.thumbnail || item.image || '/api/placeholder/60/60'} 
+                          src={item.thumbnail || (item.images && item.images[0]) || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300'} 
                           alt={item.name}
                           className="item-image"
                           onError={(e) => {
-                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zMCAyMEMzMy4zMTQgMjAgMzYgMjIuNjg2IDM2IDI2QzM2IDI5LjMxNCAzMy4zMTQgMzIgMzAgMzJDMjYuNjg2IDMyIDI0IDI5LjMxNCAyNCAyNkMyNCAyMi42ODYgMjYuNjg2IDIwIDMwIDIwWiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNMzAgMjhDMzEuNjU2OSAyOCAzMyAyNi42NTY5IDMzIDI1QzMzIDIzLjM0MzEgMzEuNjU2OSAyMiAzMCAyMkMyOC4zNDMxIDIyIDI3IDIzLjM0MzEgMjcgMjVDMjcgMjYuNjU2OSAyOC4zNDMxIDI4IDMwIDI4WiIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4K';
+                            e.target.src = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300';
                           }}
                         />
                         <div className="item-info">

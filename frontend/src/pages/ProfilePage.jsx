@@ -1,11 +1,48 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSearchParams } from 'react-router-dom';
+import { orderService, formatPrice } from '../services/api';
 import Header from '../components/Header';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 const ProfilePage = () => {
   const { user, logout } = useAuth();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('profile');
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Xử lý URL parameter để set tab
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['profile', 'orders', 'admin'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  // Load orders when orders tab is active
+  useEffect(() => {
+    if (activeTab === 'orders') {
+      loadOrders();
+    }
+  }, [activeTab]);
+
+  const loadOrders = async () => {
+    setLoading(true);
+    try {
+      console.log('Loading orders...');
+      const response = await orderService.getUserOrders();
+      console.log('Orders response:', response);
+      if (response.success) {
+        console.log('Orders data:', response.data.orders);
+        setOrders(response.data.orders || []);
+      }
+    } catch (error) {
+      console.error('Error loading orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -79,9 +116,79 @@ const ProfilePage = () => {
                 {activeTab === 'orders' && (
                   <div className="profile-tab">
                     <h2>Đơn hàng của tôi</h2>
-                    <div className="empty-state">
-                      <p>Bạn chưa có đơn hàng nào.</p>
-                    </div>
+                    {loading ? (
+                      <div className="loading">Đang tải...</div>
+                    ) : orders.length === 0 ? (
+                      <div className="empty-state">
+                        <p>Bạn chưa có đơn hàng nào.</p>
+                      </div>
+                    ) : (
+                      <div className="orders-list">
+                        {orders.map((order) => (
+                          <div key={order.id} className="order-card">
+                            <div className="order-header">
+                              <div className="order-info">
+                                <h3>Đơn hàng #{order.orderNumber}</h3>
+                                <p className="order-date">
+                                  {new Date(order.createdAt).toLocaleDateString('vi-VN')}
+                                </p>
+                              </div>
+                              <div className="order-status">
+                                <span className={`status-badge ${order.orderStatus}`}>
+                                  {order.orderStatus === 'pending' && 'Chờ xử lý'}
+                                  {order.orderStatus === 'confirmed' && 'Đã xác nhận'}
+                                  {order.orderStatus === 'processing' && 'Đang xử lý'}
+                                  {order.orderStatus === 'shipped' && 'Đang giao'}
+                                  {order.orderStatus === 'delivered' && 'Đã giao'}
+                                  {order.orderStatus === 'cancelled' && 'Đã hủy'}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className="order-items">
+                              {order.items.map((item, index) => {
+                                console.log('Order item:', item);
+                                return (
+                                  <div key={index} className="order-item">
+                                    <img 
+                                      src={item.image || item.phone?.thumbnail || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300'} 
+                                      alt={item.name}
+                                      className="item-image"
+                                      onError={(e) => {
+                                        e.target.src = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300';
+                                      }}
+                                    />
+                                    <div className="item-info">
+                                      <h4>{item.name}</h4>
+                                      <p>Số lượng: {item.quantity}</p>
+                                    </div>
+                                    <div className="item-price">
+                                      {formatPrice(item.price * item.quantity)}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            
+                            <div className="order-footer">
+                              <div className="order-total">
+                                <strong>Tổng cộng: {formatPrice(order.total)}</strong>
+                              </div>
+                              <div className="order-actions">
+                                <button className="btn btn-outline btn-sm">
+                                  Xem chi tiết
+                                </button>
+                                {order.orderStatus === 'pending' && (
+                                  <button className="btn btn-outline btn-sm">
+                                    Hủy đơn hàng
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 

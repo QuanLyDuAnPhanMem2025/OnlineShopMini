@@ -6,7 +6,7 @@ const { asyncHandler, createError } = require('../middleware/errorHandler');
 // Generate JWT Token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+    expiresIn: process.env.JWT_EXPIRE || '30d',
   });
 };
 
@@ -143,10 +143,12 @@ const googleLogin = passport.authenticate('google', {
 const googleCallback = asyncHandler(async (req, res, next) => {
   passport.authenticate('google', async (err, user) => {
     if (err) {
+      console.error('Google authentication error:', err);
       return next(createError('Google authentication failed', 401));
     }
 
     if (!user) {
+      console.error('No user returned from Google authentication');
       return next(createError('Google authentication failed', 401));
     }
 

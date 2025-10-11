@@ -94,6 +94,26 @@ userSchema.statics.findOrCreateFromGoogle = async function(googleProfile) {
   const { id: googleId, emails, name, photos } = googleProfile;
   const email = emails[0].value;
   
+  // Xử lý tên từ Google profile
+  let firstName = name.givenName || name.displayName || 'User';
+  let lastName = name.familyName || '';
+  
+  // Nếu không có lastName, tách từ displayName
+  if (!lastName && name.displayName) {
+    const nameParts = name.displayName.split(' ');
+    if (nameParts.length > 1) {
+      firstName = nameParts[0];
+      lastName = nameParts.slice(1).join(' ');
+    } else {
+      lastName = 'User'; // Fallback nếu chỉ có 1 từ
+    }
+  }
+  
+  // Nếu vẫn không có lastName, sử dụng fallback
+  if (!lastName) {
+    lastName = 'User';
+  }
+  
   // Tìm user theo googleId hoặc email
   let user = await this.findOne({
     $or: [{ googleId }, { email }]
@@ -103,7 +123,7 @@ userSchema.statics.findOrCreateFromGoogle = async function(googleProfile) {
     // Cập nhật googleId nếu user đăng ký bằng email trước đó
     if (!user.googleId) {
       user.googleId = googleId;
-      user.avatar = photos[0].value;
+      user.avatar = photos[0]?.value;
       await user.save();
     }
     return user;
@@ -113,9 +133,9 @@ userSchema.statics.findOrCreateFromGoogle = async function(googleProfile) {
   user = await this.create({
     googleId,
     email,
-    firstName: name.givenName,
-    lastName: name.familyName,
-    avatar: photos[0].value,
+    firstName,
+    lastName,
+    avatar: photos[0]?.value,
     isActive: true
   });
   

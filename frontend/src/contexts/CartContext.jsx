@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer, useCallback } from 'react';
+import { createContext, useContext, useReducer, useCallback, useEffect, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 
 const CartContext = createContext(null);
@@ -60,16 +60,51 @@ const cartReducer = (state, action) => {
         ...state,
         items: state.items.filter(item => !item.selected),
       };
+    case 'LOAD_CART':
+      return {
+        ...state,
+        items: action.payload.items || [],
+      };
     default:
       return state;
   }
 };
 
 export const CartProvider = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  const [state, dispatch] = useReducer(cartReducer, {
-    items: [],
-  });
+  const { isAuthenticated, user } = useAuth();
+  
+  // Initialize with empty cart
+  const [state, dispatch] = useReducer(cartReducer, { items: [] });
+
+  // Load user's cart when user changes or becomes authenticated
+  useEffect(() => {
+    if (user?.id && isAuthenticated) {
+      const cartKey = `cart_${user.id}`;
+      try {
+        const savedCart = localStorage.getItem(cartKey);
+        const cartData = savedCart ? JSON.parse(savedCart) : { items: [] };
+        dispatch({ type: 'LOAD_CART', payload: cartData });
+      } catch (error) {
+        console.error('Error loading user cart:', error);
+        dispatch({ type: 'CLEAR_CART' });
+      }
+    } else if (!isAuthenticated) {
+      // Clear cart when user logs out
+      dispatch({ type: 'CLEAR_CART' });
+    }
+  }, [user?.id, isAuthenticated]);
+
+  // Save cart to localStorage whenever state changes (only when user is authenticated)
+  useEffect(() => {
+    if (user?.id && isAuthenticated && state.items.length > 0) {
+      const cartKey = `cart_${user.id}`;
+      try {
+        localStorage.setItem(cartKey, JSON.stringify(state));
+      } catch (error) {
+        console.error('Error saving cart to localStorage:', error);
+      }
+    }
+  }, [state, user?.id, isAuthenticated]);
 
   const addToCart = useCallback((product) => {
     if (!isAuthenticated) {
@@ -106,31 +141,39 @@ export const CartProvider = ({ children }) => {
     dispatch({ type: 'CLEAR_CART' });
   }, []);
 
-  const getTotalItems = useCallback(() => {
+  const clearUserCart = useCallback((userId) => {
+    if (userId) {
+      const cartKey = `cart_${userId}`;
+      localStorage.removeItem(cartKey);
+    }
+  }, []);
+
+  // Memoized computed values for better performance
+  const totalItems = useMemo(() => {
     return state.items.reduce((total, item) => total + item.quantity, 0);
   }, [state.items]);
 
-  const getSelectedItems = useCallback(() => {
+  const selectedItems = useMemo(() => {
     return state.items.filter(item => item.selected);
   }, [state.items]);
 
-  const getSelectedItemsCount = useCallback(() => {
-    return getSelectedItems().reduce((total, item) => total + item.quantity, 0);
-  }, [getSelectedItems]);
+  const selectedItemsCount = useMemo(() => {
+    return selectedItems.reduce((total, item) => total + item.quantity, 0);
+  }, [selectedItems]);
 
-  const getTotalPrice = useCallback(() => {
+  const totalPrice = useMemo(() => {
     return state.items.reduce((total, item) => {
       const price = item.price || item.currentPrice || 0;
       return total + (price * item.quantity);
     }, 0);
   }, [state.items]);
 
-  const getSelectedTotalPrice = useCallback(() => {
-    return getSelectedItems().reduce((total, item) => {
+  const selectedTotalPrice = useMemo(() => {
+    return selectedItems.reduce((total, item) => {
       const price = item.price || item.currentPrice || 0;
       return total + (price * item.quantity);
     }, 0);
-  }, [getSelectedItems]);
+  }, [selectedItems]);
 
   return (
     <CartContext.Provider value={{
@@ -143,11 +186,12 @@ export const CartProvider = ({ children }) => {
       unselectAll,
       removeSelected,
       clearCart,
-      getTotalItems,
-      getSelectedItems,
-      getSelectedItemsCount,
-      getTotalPrice,
-      getSelectedTotalPrice,
+      clearUserCart,
+      totalItems,
+      selectedItems,
+      selectedItemsCount,
+      totalPrice,
+      selectedTotalPrice,
       isAuthenticated,
     }}>
       {children}

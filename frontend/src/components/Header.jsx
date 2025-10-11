@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import LoginModal from './LoginModal';
@@ -8,10 +8,10 @@ const Header = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { isAuthenticated, user, logout } = useAuth();
-  const { getTotalItems } = useCart();
+  const { totalItems } = useCart();
   const navigate = useNavigate();
 
-  const cartItemCount = getTotalItems();
+  const cartItemCount = totalItems;
 
   const handleLogin = () => {
     setShowLoginModal(true);
@@ -35,9 +35,9 @@ const Header = () => {
     <header className="header">
       <div className="container">
         <div className="header-content">
-          <a href="/" className="logo">
+          <Link to="/" className="logo">
             PhoneStore
-          </a>
+          </Link>
           
               <div className="header-actions">
                 <button className="cart-btn" onClick={handleCartClick}>
@@ -77,7 +77,10 @@ const Header = () => {
                         >
                           Tài khoản của tôi
                         </button>
-                        <button className="dropdown-item">
+                        <button 
+                          className="dropdown-item"
+                          onClick={() => navigate('/profile?tab=orders')}
+                        >
                           Đơn hàng
                         </button>
                     {user?.role === 'admin' && (

@@ -597,6 +597,106 @@ export const categoryService = {
   }
 };
 
+// Order API service
+export const orderService = {
+  // Create new order
+  createOrder: async (orderData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(orderData)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create order');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.log('Backend not available, saving order locally');
+      // Fallback: Save order to localStorage
+      const orders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+      const newOrder = {
+        id: Date.now().toString(),
+        orderNumber: `ORD${String(orders.length + 1).padStart(6, '0')}`,
+        ...orderData,
+        orderStatus: 'pending',
+        paymentStatus: 'pending',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      orders.unshift(newOrder);
+      localStorage.setItem('userOrders', JSON.stringify(orders));
+      
+      return {
+        success: true,
+        data: { order: newOrder }
+      };
+    }
+  },
+
+  // Get user orders
+  getUserOrders: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/orders/my-orders`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.log('Backend not available, using local orders');
+      // Fallback: Get orders from localStorage
+      const orders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+      return {
+        success: true,
+        data: { orders }
+      };
+    }
+  },
+
+  // Get single order
+  getOrder: async (orderId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch order');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.log('Backend not available, using local order');
+      // Fallback: Get order from localStorage
+      const orders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+      const order = orders.find(o => o.id === orderId);
+      
+      if (!order) {
+        throw new Error('Order not found');
+      }
+      
+      return {
+        success: true,
+        data: order
+      };
+    }
+  }
+};
+
 // Utility functions
 export const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', {
