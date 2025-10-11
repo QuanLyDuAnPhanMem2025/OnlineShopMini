@@ -617,6 +617,7 @@ export const orderService = {
 
       return await response.json();
     } catch (error) {
+      console.error('Order creation failed:', error);
       console.log('Backend not available, saving order locally');
       // Fallback: Save order to localStorage
       const orders = JSON.parse(localStorage.getItem('userOrders') || '[]');
@@ -655,6 +656,7 @@ export const orderService = {
 
       return await response.json();
     } catch (error) {
+      console.error('Fetch orders failed:', error);
       console.log('Backend not available, using local orders');
       // Fallback: Get orders from localStorage
       const orders = JSON.parse(localStorage.getItem('userOrders') || '[]');
