@@ -1,4 +1,4 @@
-# Multi-stage build for Node.js backend
+# Multi-stage build for Express.js backend
 FROM node:18-alpine AS base
 
 # Install dependencies only when needed
@@ -7,13 +7,12 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production
 
-# Build the application
-FROM base AS builder
+# Development image with all dependencies
+FROM base AS dev
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-RUN npm run build
 
 # Production image
 FROM base AS runner
@@ -21,14 +20,16 @@ WORKDIR /app
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN adduser --system --uid 1001 nodejs
 
-# Copy built application
-COPY --from=builder --chown=nextjs:nodejs /app/dist ./dist
-COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --chown=nextjs:nodejs package*.json ./
+# Copy production dependencies
+COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --chown=nodejs:nodejs package*.json ./
 
-USER nextjs
+# Copy application source
+COPY --from=dev --chown=nodejs:nodejs /app/src ./src
+
+USER nodejs
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
@@ -39,4 +40,4 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "src/index.js"]
