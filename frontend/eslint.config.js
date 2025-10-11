@@ -32,6 +32,7 @@ export default [
       ],
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
+      'react-hooks/exhaustive-deps': 'warn',
       'no-unused-vars': ['error', { 'argsIgnorePattern': '^_', 'varsIgnorePattern': '^_' }],
     },
     settings: {

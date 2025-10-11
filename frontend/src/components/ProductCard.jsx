@@ -6,7 +6,7 @@ const ProductCard = ({ phone, onAddToCart: _onAddToCart, onViewDetail: _onViewDe
   const discount = getDiscountPercentage(phone.originalPrice, phone.price);
 
   const handleViewDetail = () => {
-    navigate(`/product/${phone._id || phone.id}`);
+    navigate(`/product/${phone._id || phone.id}`);  
   };
 
   // const _renderStars = (rating) => {
