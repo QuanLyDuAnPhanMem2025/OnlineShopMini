@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { formatPrice, getDiscountPercentage } from '../services/api';
 
-const ProductCard = ({ phone, onAddToCart, onViewDetail: _onViewDetail }) => {
+const ProductCard = ({ phone, onAddToCart: _onAddToCart, onViewDetail: _onViewDetail }) => {
   const navigate = useNavigate();
   const discount = getDiscountPercentage(phone.originalPrice, phone.price);
 
@@ -9,26 +9,26 @@ const ProductCard = ({ phone, onAddToCart, onViewDetail: _onViewDetail }) => {
     navigate(`/product/${phone._id || phone.id}`);
   };
 
-  const _renderStars = (rating) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
+  // const _renderStars = (rating) => {
+  //   const stars = [];
+  //   const fullStars = Math.floor(rating);
+  //   const hasHalfStar = rating % 1 !== 0;
 
-    for (let i = 0; i < fullStars; i++) {
-      stars.push(<span key={i} className="stars">⭐</span>);
-    }
+  //   for (let i = 0; i < fullStars; i++) {
+  //     stars.push(<span key={i} className="stars">⭐</span>);
+  //   }
 
-    if (hasHalfStar) {
-      stars.push(<span key="half" className="stars">⭐</span>);
-    }
+  //   if (hasHalfStar) {
+  //     stars.push(<span key="half" className="stars">⭐</span>);
+  //   }
 
-    const emptyStars = 5 - Math.ceil(rating);
-    for (let i = 0; i < emptyStars; i++) {
-      stars.push(<span key={`empty-${i}`} className="stars">☆</span>);
-    }
+  //   const emptyStars = 5 - Math.ceil(rating);
+  //   for (let i = 0; i < emptyStars; i++) {
+  //     stars.push(<span key={`empty-${i}`} className="stars">☆</span>);
+  //   }
 
-    return stars;
-  };
+  //   return stars;
+  // };
 
   return (
     <div className="product-card-new" onClick={handleViewDetail}>

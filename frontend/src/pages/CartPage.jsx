@@ -18,7 +18,7 @@ const CartPage = () => {
     selectedTotalPrice,
     clearCart 
   } = useCart();
-  const { user: _user } = useAuth();
+  // const { user: _user } = useAuth();
   const navigate = useNavigate();
 
   const handleQuantityChange = (cartItemId, newQuantity) => {

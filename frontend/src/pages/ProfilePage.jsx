@@ -44,9 +44,9 @@ const ProfilePage = () => {
     }
   };
 
-  const _handleLogout = () => {
-    logout();
-  };
+  // const _handleLogout = () => {
+  //   logout();
+  // };
 
   return (
     <ProtectedRoute>
