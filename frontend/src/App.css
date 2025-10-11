@@ -2606,6 +2606,42 @@ html {
   justify-content: center;
 }
 
+/* Google Login Section */
+.google-login-section {
+  margin-top: var(--space-6);
+}
+
+.google-login-section .btn-google {
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  padding: var(--space-4) var(--space-6);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-xl);
+  background: white;
+  color: var(--gray-700);
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.google-login-section .btn-google:hover {
+  background: var(--gray-50);
+  border-color: var(--gray-300);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.google-login-section .btn-google:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.google-login-section .btn-google:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 .demo-accounts {
   background: var(--gray-50);
   border-radius: var(--radius-lg);

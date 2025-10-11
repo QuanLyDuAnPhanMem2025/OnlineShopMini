@@ -39,7 +39,7 @@ const ProductCard = ({ phone, onAddToCart, onViewDetail }) => {
     <div className="product-card-new" onClick={handleViewDetail}>
       <div className="product-image-container-new">
         <img 
-          src={phone.thumbnail} 
+          src={phone.thumbnail || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300'} 
           alt={phone.name}
           className="product-image-new"
           onError={(e) => {

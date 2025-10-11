@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import LoginModal from '../components/LoginModal';
+import ProductCard from '../components/ProductCard';
 import { phoneService, formatPrice } from '../services/api';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -35,6 +36,7 @@ const ProductDetailPage = () => {
         setError('Không tìm thấy sản phẩm');
       }
     } catch (err) {
+      console.error('Error loading phone:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -106,9 +108,12 @@ const ProductDetailPage = () => {
             <div className="product-images">
               <div className="main-image">
                 <img 
-                  src={phone.images[selectedImageIndex] || phone.thumbnail} 
+                  src={phone.images?.[selectedImageIndex] || phone.thumbnail || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500'} 
                   alt={phone.name}
                   className="product-detail-image"
+                  onError={(e) => {
+                    e.target.src = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500';
+                  }}
                 />
                 {discount > 0 && (
                   <div className="discount-badge-large">
@@ -117,7 +122,7 @@ const ProductDetailPage = () => {
                 )}
               </div>
               
-              {phone.images.length > 1 && (
+              {phone.images && phone.images.length > 1 && (
                 <div className="thumbnail-images">
                   {phone.images.map((image, index) => (
                     <img
@@ -126,6 +131,9 @@ const ProductDetailPage = () => {
                       alt={`${phone.name} ${index + 1}`}
                       className={`thumbnail ${selectedImageIndex === index ? 'active' : ''}`}
                       onClick={() => setSelectedImageIndex(index)}
+                      onError={(e) => {
+                        e.target.src = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300';
+                      }}
                     />
                   ))}
                 </div>
@@ -316,71 +324,27 @@ const ProductDetailPage = () => {
               <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', fontWeight: '600', color: '#1f2937' }}>
                 Sản phẩm liên quan
               </h2>
-              <div className="related-products-grid" style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-                gap: '1rem' 
-              }}>
+              <div className="products-grid">
                 {relatedPhones.map(relatedPhone => (
-                  <div 
-                    key={relatedPhone._id} 
-                    className="related-product-card"
-                    onClick={() => navigate(`/product/${relatedPhone._id}`)}
-                    style={{
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      padding: '1rem',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      backgroundColor: '#fff'
+                  <ProductCard
+                    key={relatedPhone._id || relatedPhone.id}
+                    phone={relatedPhone}
+                    onAddToCart={(phone) => {
+                      if (!isAuthenticated) {
+                        setShowLoginModal(true);
+                        return;
+                      }
+                      try {
+                        addToCart(phone);
+                        alert(`Đã thêm ${phone.name} vào giỏ hàng!`);
+                      } catch (error) {
+                        alert(error.message);
+                      }
                     }}
-                    onMouseEnter={(e) => {
-                      e.target.style.transform = 'translateY(-2px)';
-                      e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                    onViewDetail={(phone) => {
+                      navigate(`/product/${phone._id || phone.id}`);
                     }}
-                    onMouseLeave={(e) => {
-                      e.target.style.transform = 'translateY(0)';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  >
-                    <img 
-                      src={relatedPhone.thumbnail} 
-                      alt={relatedPhone.name}
-                      className="related-product-image"
-                      style={{
-                        width: '100%',
-                        height: '150px',
-                        objectFit: 'cover',
-                        borderRadius: '4px',
-                        marginBottom: '0.75rem'
-                      }}
-                    />
-                    <div className="related-product-info">
-                      <h4 style={{ 
-                        fontSize: '0.9rem', 
-                        fontWeight: '500', 
-                        marginBottom: '0.5rem',
-                        color: '#374151',
-                        lineHeight: '1.4'
-                      }}>
-                        {relatedPhone.name}
-                      </h4>
-                      <div className="related-product-price" style={{ 
-                        fontSize: '1rem', 
-                        fontWeight: '600', 
-                        color: '#dc2626' 
-                      }}>
-                        {formatPrice(relatedPhone.price)}
-                      </div>
-                      <div style={{ 
-                        fontSize: '0.8rem', 
-                        color: '#6b7280',
-                        marginTop: '0.25rem'
-                      }}>
-                        ⭐ {relatedPhone.averageRating.toFixed(1)} ({relatedPhone.reviewCount})
-                      </div>
-                    </div>
-                  </div>
+                  />
                 ))}
               </div>
             </div>

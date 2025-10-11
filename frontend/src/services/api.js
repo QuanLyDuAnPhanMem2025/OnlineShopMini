@@ -490,9 +490,15 @@ export const phoneService = {
       if (!phone) {
         throw new Error('Phone not found');
       }
+      
+      // Get related phones (same brand, different id)
+      const relatedPhones = mockPhones
+        .filter(p => p.id !== parseInt(id) && p.brand === phone.brand)
+        .slice(0, 4);
+      
       return {
         success: true,
-        data: { phone }
+        data: { phone, relatedPhones }
       };
     }
   },
