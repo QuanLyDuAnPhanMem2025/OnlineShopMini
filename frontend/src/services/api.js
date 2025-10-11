@@ -343,7 +343,7 @@ const mockCategories = [
 ];
 
 // Check if backend is available
-const _isBackendAvailable = async () => {
+export const isBackendAvailable = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/phones?limit=1`, {
       method: 'GET',

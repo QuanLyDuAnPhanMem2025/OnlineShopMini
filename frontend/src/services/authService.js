@@ -77,6 +77,7 @@ export const authService = {
 
       return data;
     } catch (error) {
+      console.error('Register failed:', error);
       console.log('Using mock auth for register');
       // Mock register for development
       return {
@@ -130,6 +131,7 @@ export const authService = {
 
       return data;
     } catch (error) {
+      console.error('GetMe failed:', error);
       console.log('Using mock auth for getMe');
       // Mock getMe for development
       const token = localStorage.getItem('token');
@@ -176,6 +178,7 @@ export const authService = {
 
       return data;
     } catch (error) {
+      console.error('RefreshToken failed:', error);
       console.log('Using mock auth for refreshToken');
       // Mock refresh token for development
       return {
