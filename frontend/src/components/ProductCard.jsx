@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { formatPrice, getDiscountPercentage } from '../services/api';
 
-const ProductCard = ({ phone, onAddToCart, onViewDetail }) => {
+const ProductCard = ({ phone, onAddToCart, onViewDetail: _onViewDetail }) => {
   const navigate = useNavigate();
   const discount = getDiscountPercentage(phone.originalPrice, phone.price);
 
-  const handleAddToCart = (e) => {
+  const _handleAddToCart = (e) => {
     e.stopPropagation();
     onAddToCart(phone);
   };
